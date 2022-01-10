@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from '../styles/Home.module.css';
 import {
@@ -8,17 +8,53 @@ import {
   ellipseAddress,
   formatBigNumWithDecimals,
 } from 'algo-web3';
+import algosdk, { TransactionLike, SuggestedParams } from 'algosdk';
+
+const mint_txns = (
+  signer: string,
+  suggestedParams: SuggestedParams
+): TransactionLike[] => [
+  algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: signer,
+    to: 'TEO4BJHFB2CA5IPDB6VYQ5Q7PGJCFWYSPQASKFHBVA67CKZGT56CIRJRAQ',
+    note: new Uint8Array(Buffer.from('example note 1')),
+    amount: 100000,
+    suggestedParams,
+  }),
+  algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    from: signer,
+    to: '7N37TH3QOH3KJRTLL6RHNQD7BZPT56FA6M4SH2GX4AIXDTKWSYM7ASKZWQ',
+    note: new Uint8Array(Buffer.from('example note 1')),
+    amount: 100000,
+    suggestedParams,
+  }),
+];
 
 const Home: NextPage = () => {
   const [balance, setBalance] = useState(0);
   const { web3 } = useContext(Web3Context);
-  if (!web3) {
-    return <div>Loading...</div>;
-  }
-  if (web3.wallet.isConnected()) {
-    web3
-      .fetchAccountInformation()
-      .then((value: Record<string, any>) => setBalance(value.amount));
+
+  useEffect(() => {
+    if (web3 && web3.wallet.isConnected()) {
+      web3
+        .fetchAccountInformation()
+        .then((value: Record<string, any>) => setBalance(value.amount));
+    }
+  }, [web3]);
+
+  const makePayment = async () => {
+    const account = web3.wallet.getAccount();
+    if (account != null) {
+      const suggestedParams = await web3.getSuggestedParams();
+      const res2 = await web3.submitTransactions(
+        mint_txns(account, suggestedParams)
+      );
+      console.log(res2);
+    }
+  };
+
+  if (web3 == null) {
+    return <div>Loading web3...</div>;
   }
 
   return (
@@ -66,14 +102,36 @@ const Home: NextPage = () => {
         {web3.wallet.isConnected() && (
           <div className={styles.grid}>
             <div className={styles.card}>
-              <h2>Account Info:</h2>
-              <p>Wallet Address: {ellipseAddress(web3.wallet.getAccount())}</p>
+              <h2>Wallet Address:</h2>
+              <p>{ellipseAddress(web3.wallet.getAccount())}</p>
             </div>
 
             <div className={styles.card}>
               <h2>Balance</h2>
+              <p>{formatBigNumWithDecimals(BigInt(balance), 2)} Algos</p>
+            </div>
+            <div className={styles.card}>
+              <h2>Mint</h2>
               <p>
-                Algos in Wallet: {formatBigNumWithDecimals(BigInt(balance), 2)}
+                <button onClick={makePayment}>Perform Txn</button>
+              </p>
+            </div>
+            <div className={styles.card}>
+              <h2>Burn</h2>
+              <p>
+                <button onClick={makePayment}>Perform Txn</button>
+              </p>
+            </div>
+            <div className={styles.card}>
+              <h2>Swap Algos</h2>
+              <p>
+                <button onClick={makePayment}>Perform Txn</button>
+              </p>
+            </div>
+            <div className={styles.card}>
+              <h2>Swap Assets</h2>
+              <p>
+                <button onClick={makePayment}>Perform Txn</button>
               </p>
             </div>
           </div>

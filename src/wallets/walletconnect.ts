@@ -1,6 +1,8 @@
 import WalletConnect from '@walletconnect/client';
 import QRCodeModal from 'algorand-walletconnect-qrcode-modal';
 import { IWallet, IWalletUpdateCallback } from '../web3';
+import { SignTxnParams } from './types';
+import { formatJsonRpcRequest } from '@json-rpc-tools/utils';
 
 export class WalletConnectClient implements IWallet {
   connector: WalletConnect;
@@ -63,5 +65,11 @@ export class WalletConnectClient implements IWallet {
     if (this.isConnected()) {
       this.connector.killSession();
     }
+  }
+
+  async signTxns(txns: SignTxnParams): Promise<Array<string | null>> {
+    const request = formatJsonRpcRequest('algo_signTxn', txns);
+    console.log(request);
+    return await this.connector.sendCustomRequest(request);
   }
 }

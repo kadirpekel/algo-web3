@@ -1,5 +1,14 @@
-import algosdk, { Algodv2, SuggestedParams } from 'algosdk';
-import { WalletConnectClient } from '../wallets';
+import algosdk, {
+  Algodv2,
+  SuggestedParams,
+  TransactionLike,
+  instantiateTxnIfNeeded,
+} from 'algosdk';
+import {
+  WalletConnectClient,
+  SignTxnParams,
+  IWalletTransaction,
+} from '../wallets';
 
 export type Network = {
   name: string;
@@ -18,6 +27,7 @@ export interface IWallet {
   getAccount: () => string | null;
   isConnected: () => boolean;
   onUpdate: (callback: IWalletUpdateCallback) => void;
+  signTxns: (signTxnParams: SignTxnParams) => Promise<Array<string | null>>;
 }
 
 export interface IWeb3ClientNetworkCallback {
@@ -81,12 +91,29 @@ class Web3Client {
       .do();
   }
 
-  async apiSubmitTransactions(
-    stxns: Uint8Array[]
+  async submitTransactions(
+    txns: TransactionLike[]
   ): Promise<Record<string, any>> {
     // TODO: Sign transactions by using the wallet
+    algosdk.assignGroupID(txns);
+    const txnsToSign: IWalletTransaction[] = txns.map((txn) => {
+      return {
+        txn: Buffer.from(
+          algosdk.encodeUnsignedTransaction(instantiateTxnIfNeeded(txn))
+        ).toString('base64'),
+      };
+    });
+    const signedTxns = await this.wallet.signTxns([txnsToSign]);
+    const signedTxnsToSubmit = signedTxns.map((r) => {
+      if (r == null) {
+        throw Error('signature can not be null');
+      }
+      return new Uint8Array(Buffer.from(r, 'base64'));
+    });
 
-    const { txId } = await this.algod.sendRawTransaction(stxns).do();
+    const { txId } = await this.algod
+      .sendRawTransaction(signedTxnsToSubmit)
+      .do();
     return this.waitForConfirmation(txId);
   }
 
