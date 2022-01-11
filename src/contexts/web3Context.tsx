@@ -1,4 +1,4 @@
-import React, { createContext } from 'react';
+import React, { createContext, useContext } from 'react';
 import { Network, Web3Client } from '../web3';
 
 export const defaultNetworks: Network[] = [
@@ -12,8 +12,24 @@ export const defaultNetworks: Network[] = [
   },
 ];
 
+export const createGenericContext = <T extends unknown>() => {
+  // Create a context with a generic parameter or undefined
+  const genericContext = createContext<T | undefined>(undefined);
+
+  // Check if the value provided to the context is defined or throw an error
+  const useGenericContext = () => {
+    const contextIsDefined = useContext(genericContext);
+    if (!contextIsDefined) {
+      throw new Error('useGenericContext must be used within a Provider');
+    }
+    return contextIsDefined;
+  };
+
+  return [useGenericContext, genericContext.Provider] as const;
+};
+
 export interface IWeb3ContextValue {
-  web3?: Web3Client;
+  web3: Web3Client;
 }
 
 export interface IWeb3ProviderProps {
@@ -21,7 +37,8 @@ export interface IWeb3ProviderProps {
   networks?: Network[];
 }
 
-export const Web3Context = createContext<IWeb3ContextValue>({});
+export const [useWeb3, Web3ContextProvider] =
+  createGenericContext<IWeb3ContextValue>();
 
 export class Web3Provider extends React.Component<IWeb3ProviderProps> {
   web3: Web3Client;
@@ -39,9 +56,9 @@ export class Web3Provider extends React.Component<IWeb3ProviderProps> {
 
   render() {
     return (
-      <Web3Context.Provider value={{ web3: this.web3 }}>
+      <Web3ContextProvider value={{ web3: this.web3 }}>
         {this.props.children}
-      </Web3Context.Provider>
+      </Web3ContextProvider>
     );
   }
 }

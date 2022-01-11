@@ -1,13 +1,9 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from '../styles/Home.module.css';
-import {
-  Web3Context,
-  ellipseAddress,
-  formatBigNumWithDecimals,
-} from 'algo-web3';
+import { useWeb3, ellipseAddress, formatBigNumWithDecimals } from 'algo-web3';
 import algosdk, { TransactionLike, SuggestedParams } from 'algosdk';
 
 const sample_scenario = (
@@ -32,10 +28,10 @@ const sample_scenario = (
 
 const Home: NextPage = () => {
   const [balance, setBalance] = useState(0);
-  const { web3 } = useContext(Web3Context);
+  const { web3 } = useWeb3();
 
   useEffect(() => {
-    if (web3 && web3.wallet.isConnected()) {
+    if (web3.wallet.isConnected()) {
       web3
         .fetchAccountInformation()
         .then((value: Record<string, any>) => setBalance(value.amount));
@@ -46,16 +42,12 @@ const Home: NextPage = () => {
     const account = web3.wallet.getAccount();
     if (account != null) {
       const suggestedParams = await web3.getSuggestedParams();
-      const res2 = await web3.submitTransactions(
+      const res2 = await web3.sendGroupTransations(
         sample_scenario(account, suggestedParams)
       );
       console.log(res2);
     }
   };
-
-  if (web3 == null) {
-    return <div>Loading web3...</div>;
-  }
 
   return (
     <div className={styles.container}>

@@ -24,7 +24,7 @@ export interface IWalletUpdateCallback {
 export interface IWallet {
   connect: () => void;
   disconnect: () => void;
-  getAccount: () => string | null;
+  getAccount: () => string;
   isConnected: () => boolean;
   onUpdate: (callback: IWalletUpdateCallback) => void;
   signTxns: (signTxnParams: SignTxnParams) => Promise<Array<string | null>>;
@@ -82,39 +82,53 @@ class Web3Client {
     account?: string
   ): Promise<Record<string, any>> {
     const fallbackAccount = account || this.wallet.getAccount();
-    if (!fallbackAccount) {
-      throw new Error('No wallet connected');
-    }
     return this.algod
       .accountInformation(fallbackAccount)
       .setIntDecoding(algosdk.IntDecoding.BIGINT)
       .do();
   }
 
-  async submitTransactions(
-    txns: TransactionLike[]
-  ): Promise<Record<string, any>> {
-    // TODO: Sign transactions by using the wallet
+  groupTransactions(txns: TransactionLike[]) {
     algosdk.assignGroupID(txns);
-    const txnsToSign: IWalletTransaction[] = txns.map((txn) => {
+  }
+
+  prepareTransactionsToSign(txns: TransactionLike[]): IWalletTransaction[] {
+    return txns.map((txnLike) => {
+      const txn = instantiateTxnIfNeeded(txnLike);
       return {
-        txn: Buffer.from(
-          algosdk.encodeUnsignedTransaction(instantiateTxnIfNeeded(txn))
-        ).toString('base64'),
+        txn: Buffer.from(algosdk.encodeUnsignedTransaction(txn)).toString(
+          'base64'
+        ),
+        // Override this method to implement below for more
+        message: undefined,
+        signers: undefined,
+        authAddr: undefined,
       };
     });
-    const signedTxns = await this.wallet.signTxns([txnsToSign]);
-    const signedTxnsToSubmit = signedTxns.map((r) => {
+  }
+
+  async signTransactions(txns: IWalletTransaction[]): Promise<Uint8Array[]> {
+    const signedTxns = await this.wallet.signTxns([txns]);
+    return signedTxns.map((r) => {
       if (r == null) {
-        throw Error('signature can not be null');
+        throw Error('Signature can not be null');
       }
       return new Uint8Array(Buffer.from(r, 'base64'));
     });
+  }
 
-    const { txId } = await this.algod
-      .sendRawTransaction(signedTxnsToSubmit)
-      .do();
-    return this.waitForConfirmation(txId);
+  async submitTransactions(
+    signedTxns: Uint8Array[]
+  ): Promise<Record<string, any>> {
+    return this.algod.sendRawTransaction(signedTxns).do();
+  }
+
+  async sendGroupTransations(txns: TransactionLike[]) {
+    this.groupTransactions(txns);
+    const txnsToSign = this.prepareTransactionsToSign(txns);
+    const txnsToSubmit: Uint8Array[] = await this.signTransactions(txnsToSign);
+    const { txnId } = await this.submitTransactions(txnsToSubmit);
+    this.waitForConfirmation(txnId);
   }
 
   async getSuggestedParams(): Promise<SuggestedParams> {

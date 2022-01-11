@@ -47,11 +47,11 @@ export class WalletConnectClient implements IWallet {
     return connector;
   }
 
-  getAccount(): string | null {
-    if (this.isConnected()) {
-      return this.connector.accounts[0];
+  getAccount(): string {
+    if (!this.isConnected()) {
+      throw new Error('Wallet is not connected');
     }
-    return null;
+    return this.connector.accounts[0];
   }
 
   connect(): void {
