@@ -10,7 +10,7 @@ import {
 } from 'algo-web3';
 import algosdk, { TransactionLike, SuggestedParams } from 'algosdk';
 
-const mint_txns = (
+const sample_scenario = (
   signer: string,
   suggestedParams: SuggestedParams
 ): TransactionLike[] => [
@@ -47,7 +47,7 @@ const Home: NextPage = () => {
     if (account != null) {
       const suggestedParams = await web3.getSuggestedParams();
       const res2 = await web3.submitTransactions(
-        mint_txns(account, suggestedParams)
+        sample_scenario(account, suggestedParams)
       );
       console.log(res2);
     }
