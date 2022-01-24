@@ -29,23 +29,32 @@ const accountInfo = await web.fetchAccountInfo('GMOP2WF7UNQX7BV4ZAL...')
 Package comes with a conventient `React` hook which gives you to ability to manage your web3 application state. Let's take a look at the example below. Please note the use of integrated wallet connectivity which provides a seamless integrity.
 
 ```typescript
-import { useWeb3 } from 'algo-web3';
+import { useWeb3, ellipseAddress } from 'algo-web3';
 
-const MyReactComponent = () => {
-  const [account, setAccount] = useState(null);
+const AccountLogin = () => {
+  const [address, setAddress] = useState<string>('Loading');
   const { web3 } = useWeb3();
 
   useEffect(() => {
     if (web3.wallet.isConnected()) {
       web3
         .fetchAccountInformation()
-        .then(setAccount);
+        .then((value: Record<string, any>) => setAddress(value.address));
     }
-  }, [web3]);
+  }, [web3.wallet.isConnected()]);
 
-  return (account
-    ? <span>{account.balance}</span>
-    : <button onClick={web3.wallet.connect}>Connect Your Wallet</button>
+  return (
+    <p>
+      {web3.wallet.isConnected() ? (
+        <button onClick={() => web3.wallet.disconnect()}>
+          Disconnect ({ellipseAddress(address)})
+        </button>
+      ) : (
+        <button onClick={() => web3.wallet.connect()}>
+          Connect your Algorand Wallet
+        </button>
+      )}
+    </p>
   );
 }
 ```
