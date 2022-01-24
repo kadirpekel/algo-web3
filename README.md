@@ -28,7 +28,7 @@ const accountInfo = await web.fetchAccountInfo('GMOP2WF7UNQX7BV4ZAL...')
 
 Package comes with a conventient `React` hook which gives you to ability to manage your web3 application state. Let's take a look at the example below. Please note the use of integrated wallet connectivity which provides a seamless integrity.
 
-```typescript
+```tsx
 import { useWeb3, ellipseAddress } from 'algo-web3';
 
 const AccountLogin = () => {
