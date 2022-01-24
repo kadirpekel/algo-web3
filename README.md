@@ -6,19 +6,19 @@ The `algo-web3` package allows you to interact with an Algorand blockchain and s
 Use `mpm` or `yarn` packae manager to install `algo-web3` package with its dependencies.
 
 Using yarn
-```
+```bash
 $ yarn add algo-web3
 ```
 
 Npm
-```
+```bash
 $ npm install algo-web3
 ```
 
 ## Usage
 Once installed, you may now start using the packgae by importing it as shown below
 
-```
+```typescript
 import Web3Client from 'algo-web3'
 const web3 = Web3Client([{ url: 'https://testnet.algoexplorerapi.io' }]);
 const accountInfo = await web.fetchAccountInfo('GMOP2WF7UNQX7BV4ZAL...')
@@ -28,7 +28,7 @@ const accountInfo = await web.fetchAccountInfo('GMOP2WF7UNQX7BV4ZAL...')
 
 Package comes with a conventient `React` hook which gives you to ability to manage your web3 application state. Let's take a look at the example below. Please note the use of integrated wallet connectivity which provides a seamless integrity.
 
-```
+```typescript
 import { useWeb3 } from 'algo-web3';
 
 const MyReactComponent = () => {
