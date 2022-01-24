@@ -26,7 +26,27 @@ const accountInfo = await web.fetchAccountInfo('GMOP2WF7UNQX7BV4ZAL...')
 
 ## React Usage
 
-Package comes with a conventient `React` hook which gives you to ability to manage your web3 application state. Let's take a look at the example below. Please note the use of integrated wallet connectivity which provides a seamless integrity.
+Package comes with a conventient `React` hook which gives you to ability to manage your web3 application state. Let's take a look at the example below. Please note the use of built-in wallet connectivity which provides a seamless integrated state management.
+
+To start using `web3` hook, first you'll need to wrap your components with `Web3provider` in somewhere higher level in your component hierharchy.
+
+```tsx
+...
+import { Web3Provider } from 'algo-web3';
+
+function MyApp() {
+  return (
+    <Web3Provider>
+      <Page>
+        <AccountLogin />
+        ...
+      </Page>
+    </Web3Provider>
+  );
+}
+```
+
+Now you're ready to use the hook and start interacting with Algorand blockchain.
 
 ```tsx
 import { useWeb3, ellipseAddress } from 'algo-web3';
