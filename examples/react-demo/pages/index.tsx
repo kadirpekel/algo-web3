@@ -3,7 +3,11 @@ import Head from 'next/head';
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from '../styles/Home.module.css';
-import { useWeb3, ellipseAddress, formatBigNumWithDecimals } from 'algo-web3';
+import {
+  useWeb3,
+  ellipseAddress,
+  formatBigNumWithDecimals
+} from 'algo-web3';
 import algosdk, { TransactionLike, SuggestedParams } from 'algosdk';
 
 const sample_scenario = (

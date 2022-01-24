@@ -3,6 +3,7 @@ import algosdk, {
   SuggestedParams,
   TransactionLike,
   instantiateTxnIfNeeded,
+  waitForConfirmation
 } from 'algosdk';
 import {
   WalletConnectClient,
@@ -11,7 +12,7 @@ import {
 } from '../wallets';
 
 export type Network = {
-  name: string;
+  name?: string;
   url: string;
   port?: string;
   token?: string;
@@ -120,57 +121,23 @@ class Web3Client {
   async submitTransactions(
     signedTxns: Uint8Array[]
   ): Promise<Record<string, any>> {
-    return this.algod.sendRawTransaction(signedTxns).do();
+    return await this.algod.sendRawTransaction(signedTxns).do();
   }
 
   async sendGroupTransations(txns: TransactionLike[]) {
     this.groupTransactions(txns);
     const txnsToSign = this.prepareTransactionsToSign(txns);
     const txnsToSubmit: Uint8Array[] = await this.signTransactions(txnsToSign);
-    const { txnId } = await this.submitTransactions(txnsToSubmit);
-    this.waitForConfirmation(txnId);
+    const { txId } = await this.submitTransactions(txnsToSubmit);
+    this.waitForConfirmation(txId);
   }
 
   async getSuggestedParams(): Promise<SuggestedParams> {
     return this.algod.getTransactionParams().do();
   }
 
-  async waitForConfirmation(txId: string): Promise<Record<string, any>> {
-    const timeout = 10;
-    const status = await this.algod.status().do();
-    if (status === undefined) {
-      throw new Error('Unable to get node status');
-    }
-
-    const startround = status['last-round'] + 1;
-    let currentround = startround;
-
-    while (currentround < startround + timeout) {
-      const pendingInfo = await this.algod
-        .pendingTransactionInformation(txId)
-        .do();
-      if (pendingInfo !== undefined) {
-        if (
-          pendingInfo['confirmed-round'] !== null &&
-          pendingInfo['confirmed-round'] > 0
-        ) {
-          return pendingInfo;
-        }
-        if (
-          pendingInfo['pool-error'] != null &&
-          pendingInfo['pool-error'].length > 0
-        ) {
-          throw new Error(
-            `Transaction ${txId} rejected: ${pendingInfo['pool-error']}`
-          );
-        }
-      }
-      await this.algod.statusAfterBlock(currentround).do();
-      currentround += 1;
-    }
-    throw new Error(
-      `Transaction ${txId} not confirmed after ${timeout} rounds!`
-    );
+  async waitForConfirmation(txId: string) {
+    return await waitForConfirmation(this.algod, txId, 3);
   }
 }
 
